@@ -1,0 +1,8 @@
+Row 0: co 14 sts.
+Row 1: *p2, k2tog, yo, ssk, repeat from *, p2.
+Row 2: *k2, p3, repeat from *, k2.
+Row 3: *p2, k1, yo, k1, yo, k1, repeat from *, p2.
+Row 4: *k2, p5, repeat from *, k2.
+Row 5: *p2, k2, ssk, k1, repeat from *, p2.
+Row 6: *k2, p4, repeat from *, k2.
+Row 7: cast off.

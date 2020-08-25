@@ -1,0 +1,14 @@
+Row 0: co 34 sts
+Row 1: *k1, yo, k3, ssk, k2tog, k3, yo, repeat from * 2 more times, k1.
+Row 2: p1, *yo, p3, p2tog, ssp, p3, yo, p1, repeat from * 2 more times.
+Row 3: *k2, yo, k2, ssk, k2tog, k2, yo, k1, repeat from * 2 more times, k1.
+Row 4: p1, *p2, yo, p1, p2tog, ssp, p1, yo, p3, repeat from * 2 more times.
+Row 5: *k4, yo, ssk, k2tog, yo, k3, repeat from * to 2 more times, k1.
+Row 6: p1, *p4, yo, p2tog, yo, p3, p2tog, repeat from * 2 more times.
+Row 7: *k2tog, k3, yo, k1, yo, k3, ssk, repeat from * 2 more times, k1.
+Row 8: p1, *ssp, p3, yo, p1, yo, p3, p2tog, repeat from * 2 more times.
+Row 9: *k2tog, k2, yo, k3, yo, k2, ssk, repeat from * 2 more times, k1.
+Row 10: p1, *ssp, p1, yo, p5, yo, p1, p2tog, repeat from * 2 more times.
+Row 11: *k2tog, yo, k7, yo, ssk, repeat from * 2 more times, k1.
+Row 12: p5, p2tog, p4, yo, *p2tog, yo, p3, p2tog, p4, yo, repeat from * to last st, p1.
+Row 13: cast off.

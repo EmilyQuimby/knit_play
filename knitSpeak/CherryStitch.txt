@@ -1,0 +1,19 @@
+Row 0: co 25 sts.
+Row 1: Purl.
+Row 2: k3tog, *yo, kfb, k1, kfb, yo, k5tog, repeat from *, yo, kfb, k1, kfb, yo, sl1-k2tog-psso.
+Row 3: Purl.
+Row 4: k1 tbl, *yo, k2tog, k3, ssk, yo, k1 tbl, repeat from *, yo, k2tog, k3, ssk, yo, k1 tbl.
+Row 5: Purl.
+Row 6: k1 tbl, *yo, ssk, k3, k2tog, yo, k1 tbl, repeat from *, yo, ssk, k3, k2tog, yo, k1 tbl.
+Row 7: Purl.
+Row 8: k1 tbl, *yo, ssk, k3, k2tog, yo, k1 tbl, repeat from *, yo, k1 tbl, yo, k5tog, yo, k1 tbl, yo, k1 tbl.
+Row 9: Purl.
+Row 10: k1, *kfb, yo, k5tog, yo, kfb, k1, repeat from *, kfb, yo, k5tog, yo, kfb, k1.
+Row 11: Purl.
+Row 12: k1, *k1, ssk, yo, k1 tbl, yo, k2tog, k2, repeat from *, k1, ssk, yo, k1 tbl, yo, k2tog, k2.
+Row 13: Purl.
+Row 14: k1, *k1, k2tog, yo, k1 tbl, yo, ssk, k2, repeat from *, k1, k2tog, yo, k1 tbl, yo, ssk, k2.
+Row 15: Purl.
+Row 16: k3tog, *yo, k1 tbl, yo, k1 tbl, yo, k1 tbl, yo, k5tog, repeat from *, yo, k1 tbl, yo, k1 tbl, yo, k1 tbl, yo, sl1-k2tog-psso.
+Row 17: Purl.
+Row 18: cast off.
