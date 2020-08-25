@@ -434,7 +434,7 @@ public class KnitGraph {
         	System.out.println("dropped stitch = " + s.stitchNumber);
             stitches.remove(s);
         }
-        //droppedStitches.clear();
+        droppedStitches.clear();
         //below for testing
         for (Stitch s : stitches) {
             System.out.println("Remaining stitch: " + s.stitchNumber);
@@ -578,8 +578,8 @@ public class KnitGraph {
         }
     }
     ////////////////////////////////////////////////////////////
-    
-    
+
+
     ///////For JUnit Tests...///////////////////
 //    int[] getStitches() {
 //    	ArrayList<Integer> stitchNumbers = new ArrayList<Integer>();
@@ -589,7 +589,7 @@ public class KnitGraph {
 //    	int[] finalStitchNumbers = new int[stitchNumbers.size()];
 //    	finalStitchNumbers = stitchNumbers.stream().mapToInt(i -> i).toArray();
 //    	return finalStitchNumbers;
-//    
+//
 //    }
     int getnumberOfStitches() {
     	return stitches.size();
@@ -603,7 +603,7 @@ public class KnitGraph {
     }
 	public void clearDroppedStitches() {
 		droppedStitches.clear();
-		
+
 	}
 
     //this is a copy of the doKnitting method that has been modified to part-build the KnitGraph
