@@ -3,32 +3,23 @@ import java.awt.*;
 import java.util.Random;
 
 public class KnitPlay extends JFrame {
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = 8706410108159112253L;
-	private final JLabel background;
+	private final JLabel BACKGROUND;
     private SwingWorker<KnitGraph, Void> knitter;
     private SwingWorker<Void, Void> unPicker;
     private SwingWorker<Void, Void> stitchDropper;
     private SwingWorker<Void, Void> player;
     private KnitGraph knitGraph;
-    int randomInt;
-    String file;
-    String fileName;
+    private int randomInt;
+    private String file;
+    private String fileName;
     private boolean knitting;
-    public JTextField knittingCommands;
-    public JTextField stitchesMade;
+    public JLabel knittingCommands;
+    public JLabel stitchesMade;
     public KnitPlay() {
         knitting = true;
 
         setFileInfo();
-        //select which knitFile we are using at random
-//        knitFile = new KnitFileSelector("knitSpeak/LaceFiles").getKnitFileSelection();
-//        Random random = new Random();
-//        randomInt = random.nextInt(3);
-//        file = knitFile[randomInt];
-//        fileName = file.replace("knitSpeak/", " ").replace(".txt", " ");
 
         //make frame fit size of screen and remove header buttons/tabs
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -39,22 +30,22 @@ public class KnitPlay extends JFrame {
         Icon icon = scaleIcon(new ImageIcon("images/kidknits.jpg"), 1500, 1400);
 
         //set background image
-        this.background = new JLabel(icon, SwingConstants.CENTER);
-        background.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
-        background.setLayout(new GridLayout(3,1));
-        this.add(background);
+        this.BACKGROUND = new JLabel(icon, SwingConstants.CENTER);
+        BACKGROUND.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
+        BACKGROUND.setLayout(new GridLayout(3,1));
+        this.add(BACKGROUND);
 
         JPanel southPanel = new JPanel(new GridLayout(1,2));
         southPanel.setOpaque(false);
         this.add(southPanel, BorderLayout.SOUTH);
 
-        knittingCommands = new JTextField("Today we are knitting: " );
+        knittingCommands = new JLabel("Today we are knitting: " );
         knittingCommands.setFont(new Font("Helvetica", Font.BOLD, 36));
         knittingCommands.setForeground(Color.DARK_GRAY);
         knittingCommands.setOpaque(false);
         southPanel.add(knittingCommands);
 
-        stitchesMade = new JTextField(fileName);
+        stitchesMade = new JLabel(fileName);
         stitchesMade.setFont(new Font("Helvetica", Font.BOLD, 36));
         stitchesMade.setForeground(Color.DARK_GRAY);
         stitchesMade.setOpaque(false);
@@ -71,20 +62,14 @@ public class KnitPlay extends JFrame {
 
         knitGraph = new KnitGraph(new KnitSpeakIn(file).getKnitFile(), this);
 
-       // addLabel(knitLabel);
         addButtons(knitIt, unpickIt, dropIt, knitGraph);
 
         //basic stuff to stop program when frame is closed, make visible etc
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
     }
-//    private void addLabel(JLabel label) {
-//        label.setOpaque(false);
-//        label.setLayout(new GridLayout(3,1));
-//        label.setBorder(BorderFactory.createEmptyBorder(30,10,10,10));
-//        background.add(label, BorderLayout.CENTER);
-//    }
-    //addButton method: takes a JButton, adds it to relevant JLabel and associates it with relevant KnitSpeak file
+    //addButton method: takes a JButton, adds it to relevant JLabel and associates it with relevant KnitSpeak file,
+    //adds action listeners to each button - each containing it's own SwingWorker for triggering KnitGraph processes.
     private void addButtons(JButton knit, JButton unpick, JButton drop, KnitGraph graph) {
         makeButton(knit);
         makeButton(unpick);
@@ -110,6 +95,9 @@ public class KnitPlay extends JFrame {
             knitter = new SwingWorker<KnitGraph, Void>() {
                 @Override
                 protected KnitGraph doInBackground() throws Exception {
+                	if(!knitting) {
+                		unPicker.cancel(true);
+                	}
                     graph.doKnitting();
                     knit.setText(" ");
                     unpick.setText("PLAY");
@@ -151,6 +139,7 @@ public class KnitPlay extends JFrame {
                     }
                 };
                 knitter.cancel(true);
+                knitting = false;
                 unPicker.execute();
             }
         });
@@ -173,22 +162,25 @@ public class KnitPlay extends JFrame {
             drop.setText(" ");
             unpick.setEnabled(true);
         });
-        background.add(knit);
-        background.add(unpick);
-        background.add(drop);
+        BACKGROUND.add(knit);
+        BACKGROUND.add(unpick);
+        BACKGROUND.add(drop);
     }
+    
+    
     private void makeButton(JButton button) {
         button.setForeground(Color.MAGENTA);
         button.setOpaque(false);
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
     }
-    //takes an icon, gets the image, scales it to size of JButton, method here for flexibility
+    //takes an icon, gets the image, scales it to size of JButton, method here for flexibility/scalability
     private static Icon scaleIcon(ImageIcon icon, int newWidth, int newHeight) {
         Image img = icon.getImage();
         Image scaledImg = img.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
         return new ImageIcon(scaledImg);
     }
+    //method that selects a file to play
     private void setFileInfo() {
         String[] knitFile = new KnitFileSelector("knitSpeak/LaceFiles").getKnitFileSelection();
         Random random = new Random();
@@ -196,6 +188,8 @@ public class KnitPlay extends JFrame {
         this.file = knitFile[randomInt];
         this.fileName = file.replace("knitSpeak/", " ").replace(".txt", " ");
     }
+    
+    
     public static void main(String[] args) {
         new KnitPlay();
     }

@@ -3,8 +3,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.jupiter.api.Test;
 
 class KnitGraphTest {
-	
-//***PLEASE COMMENT-OUT CALL OF clearDroppedStitches() IN KnitGraph LINE 437 BEFORE RUNNING THIS TEST***//
+	//*Please note this entire test takes approx 10-15 minutes to run*//
 
 	@Test
 	//knits a completed graph and checks that the correct number of stitches have been made
@@ -17,7 +16,7 @@ class KnitGraphTest {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		assertEquals(442, actual.getnumberOfStitches());
+		assertEquals(442, actual.getNumberOfStitches());
 	}
 	@Test
 	//part-knits a graph, checks that the correct number of stitches have been made, unpicks the graph
@@ -28,23 +27,23 @@ class KnitGraphTest {
 				new KnitPlay());
 		try {
 			actual.knitPartOfGraph(testCommands, 2);
-			assertEquals(227, actual.getnumberOfStitches());
+			assertEquals(227, actual.getNumberOfStitches());
 			actual.doUnpicking();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		assertEquals(0, actual.getnumberOfStitches());
+		assertEquals(0, actual.getNumberOfStitches());
 		
 		try {
 			actual.knitPartOfGraph(testCommands, 3);
-			assertEquals(155, actual.getnumberOfStitches());
+			assertEquals(155, actual.getNumberOfStitches());
 			actual.doUnpicking();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		assertEquals(0, actual.getnumberOfStitches());
+		assertEquals(0, actual.getNumberOfStitches());
 		
 	}
 	@Test
@@ -61,26 +60,25 @@ class KnitGraphTest {
 		
 		try {
 			actual.knitPartOfGraph(testCommands, 3);
-			assertEquals(155, actual.getnumberOfStitches());
+			assertEquals(155, actual.getNumberOfStitches());
 			actual.dropAStitch();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		assertEquals(154, actual.getnumberOfStitches());
+		assertEquals(154, actual.getNumberOfStitches());
 		assertArrayEquals(secondExpected, actual.getDroppedStitches());
 		
 		actual.resetGraph();
-		actual.clearDroppedStitches();
 		try {
 			actual.knitPartOfGraph(testCommands, 2);
-			assertEquals(227, actual.getnumberOfStitches());
+			assertEquals(227, actual.getNumberOfStitches());
 			actual.dropAStitch();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		assertEquals(223, actual.getnumberOfStitches());
+		assertEquals(223, actual.getNumberOfStitches());
 		assertArrayEquals(firstExpected, actual.getDroppedStitches());
 		
 	}

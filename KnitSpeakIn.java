@@ -69,7 +69,7 @@ public class KnitSpeakIn {
         this.knitArray = new String[knitFile.size()];
         knitFile.toArray(knitArray);
     }
-    static int extractInt(String str) {
+    private static int extractInt(String str) {
         str = str.replaceAll("[^\\d]", "");
         str = str.trim();
         if(str.equals("")) {
