@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class KnitPlay extends JFrame {
 	private static final long serialVersionUID = 8706410108159112253L;
-	private final JLabel BACKGROUND;
+	private final JPanel BACKGROUND;
     private SwingWorker<KnitGraph, Void> knitter;
     private SwingWorker<Void, Void> unPicker;
     private SwingWorker<Void, Void> stitchDropper;
@@ -21,19 +21,46 @@ public class KnitPlay extends JFrame {
 
         setFileInfo();
 
-        //make frame fit size of screen and remove header buttons/tabs
-        this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        this.setUndecorated(true);
+        // Set up the main application window
+        this.setTitle("KnitPlay");
+        this.setSize(1000, 750);
+        this.setLocationRelativeTo(null);
         this.setLayout(new BorderLayout());
 
         //main image scaled to size
-        Icon icon = scaleIcon(new ImageIcon("images/kidknits.jpg"), 1500, 1400);
+        Image backgroundImage = new ImageIcon("images/kidknits.jpg").getImage();
 
-        //set background image
-        this.BACKGROUND = new JLabel(icon, SwingConstants.CENTER);
-        BACKGROUND.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
-        BACKGROUND.setLayout(new GridLayout(3,1));
-        this.add(BACKGROUND);
+        this.BACKGROUND = new JPanel(new GridLayout(3, 1)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+
+                int panelWidth = getWidth();
+                int panelHeight = getHeight();
+
+                int imageWidth = backgroundImage.getWidth(this);
+                int imageHeight = backgroundImage.getHeight(this);
+
+                if (imageWidth <= 0 || imageHeight <= 0) {
+                    return;
+                }
+
+                double scale = Math.max(
+                    (double) panelWidth / imageWidth,
+                    (double) panelHeight / imageHeight
+                );
+
+                int width = (int) Math.ceil(imageWidth * scale);
+                int height = (int) Math.ceil(imageHeight * scale);
+
+                int x = (panelWidth - width) / 2;
+                int y = (panelHeight - height) / 2;
+
+                g.drawImage(backgroundImage, x, y, width, height, this);
+            }
+        };
+
+        this.add(BACKGROUND, BorderLayout.CENTER);
 
         JPanel southPanel = new JPanel(new GridLayout(1,2));
         southPanel.setOpaque(false);
@@ -78,11 +105,16 @@ public class KnitPlay extends JFrame {
         Font unpickFont = new Font("Helvetica", Font.BOLD, 72);
         Font dropFont = new Font("Helvetica", Font.BOLD, 32);
         knit.setFont(knitFont);
-        unpick.setFont(unpickFont);
-        drop.setFont(dropFont);
         knit.setEnabled(true);
+        knit.setFocusPainted(false);
+
+        unpick.setFont(unpickFont);
         unpick.setEnabled(false);
+        unpick.setFocusPainted(false);
+
+        drop.setFont(dropFont);
         drop.setEnabled(false);
+        drop.setFocusPainted(false);
 
         knit.addActionListener(e -> {
             knit.setEnabled(false);
@@ -174,12 +206,7 @@ public class KnitPlay extends JFrame {
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
     }
-    //takes an icon, gets the image, scales it to size of JButton, method here for flexibility/scalability
-    private static Icon scaleIcon(ImageIcon icon, int newWidth, int newHeight) {
-        Image img = icon.getImage();
-        Image scaledImg = img.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
-        return new ImageIcon(scaledImg);
-    }
+    
     //method that selects a file to play
     private void setFileInfo() {
         String[] knitFile = new KnitFileSelector("knitSpeak/LaceFiles").getKnitFileSelection();
