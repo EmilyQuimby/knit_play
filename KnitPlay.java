@@ -13,8 +13,8 @@ public class KnitPlay extends JFrame {
     private String file;
     private String fileName;
     private boolean knitting;
-    public JLabel knittingCommands;
-    public JLabel stitchesMade;
+    private JLabel knittingCommands;
+    private JLabel stitchesMade;
     public KnitPlay() {
         knitting = true;
         setFileInfo();
@@ -224,6 +224,20 @@ public class KnitPlay extends JFrame {
         this.randomInt = random.nextInt(knitFile.length);
         this.file = knitFile[randomInt];
         this.fileName = file.replace("knitSpeak/", " ").replace(".txt", " ");
+    }
+    public void updateKnittingCommands(String text) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            knittingCommands.setText(text);
+        } else {
+            SwingUtilities.invokeLater(() -> knittingCommands.setText(text));
+        }
+    }
+    public void updateStitchesMade(String text) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            stitchesMade.setText(text);
+        } else {
+            SwingUtilities.invokeLater(() -> stitchesMade.setText(text));
+        }
     }
     public static void main(String[] args) {
         new KnitPlay();

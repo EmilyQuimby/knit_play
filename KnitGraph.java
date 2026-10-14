@@ -60,11 +60,11 @@ public class KnitGraph {
      * @throws Exception
      */
    synchronized void doKnitting() throws Exception {
-       KNIT_PLAY.stitchesMade.setText("let the knitting begin");
+       KNIT_PLAY.updateStitchesMade("let the knitting begin");
        Thread.sleep(250);       //pause to allow GUI update to be read.
         for (int i = currentCommandNo; i < COMMANDS.length; i++) {
             currentCommandNo = i;
-            KNIT_PLAY.knittingCommands.setText(COMMANDS[i]);
+            KNIT_PLAY.updateKnittingCommands(COMMANDS[i]);
             if (COMMANDS[i].contains("co")) {
                 edgeLength = 0;
                 castOn(extractInt(COMMANDS[i]));
@@ -133,7 +133,7 @@ public class KnitGraph {
         }
         STITCHES.add(stitch);
         SOUNDS.add(stitch.soundPlayer);
-        KNIT_PLAY.stitchesMade.setText("Made stitch no: " + stitchNumber);
+        KNIT_PLAY.updateStitchesMade("Made stitch no: " + stitchNumber);
         stitchNumber++;
     }
     private void addEdge(Stitch from, Stitch to, int length) {
@@ -160,7 +160,7 @@ public class KnitGraph {
         stitchesInRowBelow = stitchesInRowBelow + increases - decreases;
         increases = 0;
         decreases = 0;
-        KNIT_PLAY.stitchesMade.setText("next row!");
+        KNIT_PLAY.updateStitchesMade("next row!");
         Thread.sleep(450); //pause to allow the GUI update to be read.
     }
     private void knitOrPurl() throws Exception {
@@ -201,7 +201,7 @@ public class KnitGraph {
     //ends the knitting process and creates new "castoff" sounds for each stitch in the row below.
     private void castOff() throws InterruptedException {
         castingOff = true;
-        KNIT_PLAY.stitchesMade.setText("casting off");
+        KNIT_PLAY.updateStitchesMade("casting off");
         int count = 0;
         while(count<=stitchesInRowBelow) {
             SoundPlayer soundPlayer = new SoundPlayer("castoff", 1);
@@ -237,7 +237,7 @@ public class KnitGraph {
      * @throws Exception
      */
     synchronized void doUnpicking() throws Exception {
-        KNIT_PLAY.stitchesMade.setText("OK! let's unpick some stitches...");
+        KNIT_PLAY.updateStitchesMade("OK! let's unpick some stitches...");
         Thread.sleep(550);  //pause to allow GUI update to be seen
         try {
             //if casting off, do nothing.
@@ -255,7 +255,7 @@ public class KnitGraph {
                 currentCommandNo = getLastStitch().commandNo;
                 STITCHES.get(stitch).soundPlayer.getClip().close();
                 SOUNDS.remove(STITCHES.get(stitch).soundPlayer);
-                KNIT_PLAY.stitchesMade.setText("Unpicking stitch no. " + STITCHES.get(stitch).stitchNumber);
+                KNIT_PLAY.updateStitchesMade("Unpicking stitch no. " + STITCHES.get(stitch).stitchNumber);
                 STITCHES.remove(stitch);
                 if(STITCHES.isEmpty()) {
                     resetGraph();
@@ -279,13 +279,13 @@ public class KnitGraph {
         for (int s = STITCHES.indexOf(getLastStitch()); s >= 0; s--) {
             //if we've cast off as far as the cast on row, or all stitches have been cast off, just start again.
             if (STITCHES.get(s).command.contains("co")) {
-                KNIT_PLAY.stitchesMade.setText("Let's start again!");
+                KNIT_PLAY.updateStitchesMade("Let's start again!");
                 resetGraph();
                 return;
             }
             //if it's not a turning stitch i.e. not the end of the row, keep removing it
             if (!STITCHES.get(s).turningStitch) {
-                KNIT_PLAY.stitchesMade.setText("Unpicking stitch no. " + STITCHES.get(s).stitchNumber);
+                KNIT_PLAY.updateStitchesMade("Unpicking stitch no. " + STITCHES.get(s).stitchNumber);
                 STITCHES.get(s).soundPlayer.getClip().close();
                 SOUNDS.remove(STITCHES.get(s).soundPlayer);
                 STITCHES.remove(STITCHES.get(s));
@@ -332,24 +332,24 @@ public class KnitGraph {
      * @throws InterruptedException
      */
     synchronized void dropAStitch() throws InterruptedException {
-        KNIT_PLAY.knittingCommands.setText("whoops - dropped a stitch!");
+        KNIT_PLAY.updateKnittingCommands("whoops - dropped a stitch!");
 
         if (castingOff || finishedKnitting) {
-            KNIT_PLAY.stitchesMade.setText("No - we'd already finished knitting!");
+            KNIT_PLAY.updateStitchesMade("No - we'd already finished knitting!");
             return;
         }
 
         if (STITCHES.isEmpty()
                 || workedStitches == stitchesInRowBelow
                 || getLastStitch().commandNo == 1) {
-            KNIT_PLAY.stitchesMade.setText("No stitch has been dropped");
+            KNIT_PLAY.updateStitchesMade("No stitch has been dropped");
             return;
         }
 
         Stitch droppedStitch = findStitchToDrop();
 
         if (!canDropStitch(droppedStitch)) {
-            KNIT_PLAY.stitchesMade.setText("No stitch can be dropped yet");
+            KNIT_PLAY.updateStitchesMade("No stitch can be dropped yet");
             return;
         }
 
@@ -431,7 +431,7 @@ public class KnitGraph {
             thread.start();
             Thread.sleep(100);
             thread.join();
-            KNIT_PLAY.stitchesMade.setText("Dropped Stitch: " + s.stitchNumber);
+            KNIT_PLAY.updateStitchesMade("Dropped Stitch: " + s.stitchNumber);
             Thread.sleep(450);
         }
         Stitch tempFrom = null;
@@ -477,8 +477,8 @@ public class KnitGraph {
      * @throws InterruptedException
      */
     synchronized void playGraph() throws InterruptedException{
-        KNIT_PLAY.knittingCommands.setText("");
-        KNIT_PLAY.stitchesMade.setText("Playing the knit graph");
+        KNIT_PLAY.updateKnittingCommands("");
+        KNIT_PLAY.updateStitchesMade("Playing the knit graph");
         String command = "clapping";
         int loops = 1;
         EDGES.get(0).from.soundPlayer = new SoundPlayer(command, loops);
@@ -519,8 +519,8 @@ public class KnitGraph {
             Thread.sleep(350);
             e.to.thread = null;
         }
-        KNIT_PLAY.knittingCommands.setText("Program resetting...");
-        KNIT_PLAY.stitchesMade.setText("");
+        KNIT_PLAY.updateKnittingCommands("Program resetting...");
+        KNIT_PLAY.updateStitchesMade("");
         resetGraph();
     }
 
@@ -615,11 +615,11 @@ public class KnitGraph {
     //this is a copy of the doKnitting method that has been modified to part-build the KnitGraph
     //so that it can be used for JUnit testing.
     synchronized void knitPartOfGraph(String[] testCommands, int fraction) throws Exception {
-        KNIT_PLAY.stitchesMade.setText("let the knitting begin");
+        KNIT_PLAY.updateStitchesMade("let the knitting begin");
         Thread.sleep(250);       //pause to allow GUI update to be read.
          for (int i = 0; i < testCommands.length/fraction; i++) {
              currentCommandNo = i;
-             KNIT_PLAY.knittingCommands.setText(testCommands[i]);
+             KNIT_PLAY.updateKnittingCommands(testCommands[i]);
              if (testCommands[i].contains("co")) {
                  edgeLength = 0;
                  castOn(extractInt(testCommands[i]));
