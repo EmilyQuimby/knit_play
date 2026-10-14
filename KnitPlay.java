@@ -103,14 +103,26 @@ public class KnitPlay extends JFrame {
             knitter = new SwingWorker<KnitGraph, Void>() {
                 @Override
                 protected KnitGraph doInBackground() throws Exception {
-                    if(!knitting) {
-                        unPicker.cancel(true);
-                    }
                     knitGraph.doKnitting();
-                    knit.setText(" ");
-                    unpick.setText("PLAY");
-                    drop.setText(" ");
                     return knitGraph;
+                }
+
+                @Override
+                protected void done() {
+                    if (isCancelled()) {
+                        return;
+                    }
+
+                    try {
+                        get();
+
+                        knit.setText(" ");
+                        unpick.setText("PLAY");
+                        drop.setText(" ");
+
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             };
             knitter.execute();
