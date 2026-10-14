@@ -3,3 +3,4 @@
 build/
 # Local dependencies
 lib/
+/KnitPlay.jar
