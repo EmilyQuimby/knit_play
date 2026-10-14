@@ -1,85 +1,92 @@
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 
+/**
+ * Integration tests for knitting graph operations.
+ *
+ * Exercises knitting, unpicking and dropping stitches using
+ * the MyrtleLeaf knitting pattern.
+ *
+ * These tests execute the knitting simulation and associated
+ * sound operations, and may take approximately 10–15 minutes.
+ */
 class KnitGraphTest {
-	//*Please note this entire test takes approx 10-15 minutes to run*//
 
-	@Test
-	//knits a completed graph and checks that the correct number of stitches have been made
-	void knittingTest() {
-		KnitGraph actual = new KnitGraph(new KnitSpeakIn("knitSpeak/MyrtleLeaf.txt").getKnitFile(),
-				new KnitPlay());
-		try {
-			actual.doKnitting();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		assertEquals(442, actual.getNumberOfStitches());
-	}
-	@Test
-	//part-knits a graph, checks that the correct number of stitches have been made, unpicks the graph
-	//and checks that all stitches have been removed. Checks for a couple of part-knitted graphs with varying sizes
-	void unpickingTest() {
-		String[] testCommands = new KnitSpeakIn("knitSpeak/MyrtleLeaf.txt").getKnitFile();
-		KnitGraph actual = new KnitGraph(testCommands,
-				new KnitPlay());
-		try {
-			actual.knitPartOfGraph(testCommands, 2);
-			assertEquals(227, actual.getNumberOfStitches());
-			actual.doUnpicking();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		assertEquals(0, actual.getNumberOfStitches());
-		
-		try {
-			actual.knitPartOfGraph(testCommands, 3);
-			assertEquals(155, actual.getNumberOfStitches());
-			actual.doUnpicking();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		assertEquals(0, actual.getNumberOfStitches());
-		
-	}
-	@Test
-	//part-knits a graph, checks that the correct number of stitches have been made, drops a stitch
-	//and checks that the correct number of stitches have been removed (dropped). Also checks that
-	//the correct stitches have been removed (dropped).
-	//Checks for a couple of part-knitted graphs with varying sizes
-	void dropAStitchTest() {
-		String[] testCommands = new KnitSpeakIn("knitSpeak/MyrtleLeaf.txt").getKnitFile();
-		KnitGraph actual = new KnitGraph(testCommands,
-				new KnitPlay());
-		int[] firstExpected = new int[] {180,159,112,91};
-		int[] secondExpected = new int[] {115};
-		
-		try {
-			actual.knitPartOfGraph(testCommands, 3);
-			assertEquals(155, actual.getNumberOfStitches());
-			actual.dropAStitch();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		assertEquals(154, actual.getNumberOfStitches());
-		assertArrayEquals(secondExpected, actual.getDroppedStitches());
-		
-		actual.resetGraph();
-		try {
-			actual.knitPartOfGraph(testCommands, 2);
-			assertEquals(227, actual.getNumberOfStitches());
-			actual.dropAStitch();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		assertEquals(223, actual.getNumberOfStitches());
-		assertArrayEquals(firstExpected, actual.getDroppedStitches());
-		
-	}
+    /**
+     * Verifies that knitting the complete pattern produces
+     * the expected number of stitches.
+     */
+    @Test
+    void knittingTest() throws Exception {
+        KnitGraph actual = new KnitGraph(
+            new KnitSpeakIn("knitSpeak/MyrtleLeaf.txt").getKnitFile(),
+            new KnitPlay()
+        );
+
+        actual.doKnitting();
+
+        assertEquals(442, actual.getNumberOfStitches());
+    }
+
+    /**
+     * Verifies that two partially knitted graphs contain the
+     * expected number of stitches and can be fully unpicked.
+     *
+     * Reuses the same graph between the two scenarios.
+     */
+    @Test
+    void unpickingTest() throws Exception {
+        String[] testCommands =
+            new KnitSpeakIn("knitSpeak/MyrtleLeaf.txt").getKnitFile();
+
+        KnitGraph actual = new KnitGraph(testCommands, new KnitPlay());
+
+        actual.knitPartOfGraph(testCommands, 2);
+        assertEquals(227, actual.getNumberOfStitches());
+
+        actual.doUnpicking();
+        assertEquals(0, actual.getNumberOfStitches());
+
+        actual.knitPartOfGraph(testCommands, 3);
+        assertEquals(155, actual.getNumberOfStitches());
+
+        actual.doUnpicking();
+        assertEquals(0, actual.getNumberOfStitches());
+    }
+
+    /**
+     * Verifies the number and identity of stitches removed
+     * when dropping a stitch from partially knitted graphs.
+     *
+     * Tests two different stages of the same knitting pattern.
+     */
+    @Test
+    void dropAStitchTest() throws Exception {
+        String[] testCommands =
+            new KnitSpeakIn("knitSpeak/MyrtleLeaf.txt").getKnitFile();
+
+        KnitGraph actual = new KnitGraph(testCommands, new KnitPlay());
+
+        int[] firstExpected = {180, 159, 112, 91};
+        int[] secondExpected = {115};
+
+        actual.knitPartOfGraph(testCommands, 3);
+        assertEquals(155, actual.getNumberOfStitches());
+
+        actual.dropAStitch();
+        assertEquals(154, actual.getNumberOfStitches());
+        assertArrayEquals(secondExpected, actual.getDroppedStitches());
+
+        actual.resetGraph();
+
+        actual.knitPartOfGraph(testCommands, 2);
+        assertEquals(227, actual.getNumberOfStitches());
+
+        actual.dropAStitch();
+        assertEquals(223, actual.getNumberOfStitches());
+        assertArrayEquals(firstExpected, actual.getDroppedStitches());
+    }
 }
