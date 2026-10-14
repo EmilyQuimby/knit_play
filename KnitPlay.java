@@ -1,6 +1,17 @@
 import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
+
+/**
+ * Main application window and controller for KnitPlay.
+ *
+ * Displays the current knitting pattern and provides controls
+ * for knitting, unpicking, dropping stitches and playing the
+ * resulting graph as sound.
+ *
+ * Uses SwingWorkers to run graph operations in the background,
+ * keeping the interface responsive during processing.
+ */
 public class KnitPlay extends JFrame {
     private static final long serialVersionUID = 8706410108159112253L;
     private final JPanel BACKGROUND;
@@ -9,12 +20,19 @@ public class KnitPlay extends JFrame {
     private SwingWorker<Void, Void> stitchDropper;
     private SwingWorker<KnitGraph, Void> player;
     private KnitGraph knitGraph;
-    private int randomInt;
     private String file;
     private String fileName;
-    private boolean knitting;
+    private boolean knitting; // Tracks whether the application is in knitting mode rather than unpicking mode.
     private JLabel knittingCommands;
     private JLabel stitchesMade;
+
+    /**
+     * Initialises the application window and knitting controls.
+     *
+     * Selects a knitting pattern, creates its graph, configures
+     * the background image and status labels, and registers
+     * the button actions.
+     */
     public KnitPlay() {
         knitting = true;
         setFileInfo();
@@ -23,7 +41,8 @@ public class KnitPlay extends JFrame {
         this.setSize(1000, 750);
         this.setLocationRelativeTo(null);
         this.setLayout(new BorderLayout());
-        //main image scaled to size
+        // Scale the image to cover the panel while preserving its aspect ratio.
+        // Centre the image, cropping any excess beyond the panel boundaries.
         Image backgroundImage = new ImageIcon("images/kidknits.jpg").getImage();
         this.BACKGROUND = new JPanel(new GridLayout(3, 1)) {
             @Override
@@ -64,18 +83,32 @@ public class KnitPlay extends JFrame {
         String knit = "KNIT";
         String unpick = "UNPICK";
         String dropAStitch = "DROP A STITCH";
-        //instantiate JButtons
+        // Create the controls for the knitting operations.
         JButton knitIt = new JButton(knit);
         JButton unpickIt = new JButton(unpick);
         JButton dropIt = new JButton(dropAStitch);
         knitGraph = new KnitGraph(new KnitSpeakIn(file).getKnitFile(), this);
         addButtons(knitIt, unpickIt, dropIt);
-        //basic stuff to stop program when frame is closed, make visible etc
+        // Close the application when the window closes and display the interface.
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
     }
-    //addButton method: takes a JButton, adds it to relevant JLabel and associates it with relevant KnitSpeak file,
-    //adds action listeners to each button - each containing it's own SwingWorker for triggering KnitGraph processes.
+    
+    /**
+     * Configures the knitting controls and their action listeners.
+     *
+     * Each control starts a SwingWorker to perform its graph operation
+     * without blocking the Swing event dispatch thread.
+     *
+     * KNIT starts or resumes knitting, UNPICK interrupts knitting
+     * and reverses stitches, and DROP A STITCH simulates laddering.
+     * After knitting completes or a drop operation finishes, the
+     * UNPICK control becomes PLAY, allowing the graph to be heard.
+     *
+     * @param knit button used to start or resume knitting
+     * @param unpick button used to unpick stitches or play the graph
+     * @param drop button used to drop a stitch
+     */
     private void addButtons(JButton knit, JButton unpick, JButton drop) {
         makeButton(knit);
         makeButton(unpick);
@@ -92,6 +125,8 @@ public class KnitPlay extends JFrame {
         drop.setFont(dropFont);
         drop.setEnabled(false);
         drop.setFocusPainted(false);
+
+        // Start or resume knitting, cancelling an active unpicking worker.
         knit.addActionListener(e -> {
             knit.setEnabled(false);
             unpick.setEnabled(true);
@@ -107,6 +142,7 @@ public class KnitPlay extends JFrame {
                     return knitGraph;
                 }
 
+                // SwingWorker.done() runs on the EDT, so button updates are safe here.
                 @Override
                 protected void done() {
                     if (isCancelled()) {
@@ -127,6 +163,8 @@ public class KnitPlay extends JFrame {
             };
             knitter.execute();
         });
+
+        // Play the completed graph, or interrupt knitting to begin unpicking.
         unpick.addActionListener(e -> {
             if (unpick.getText().equals("PLAY")) {
                 knit.setEnabled(false);
@@ -144,6 +182,8 @@ public class KnitPlay extends JFrame {
                             KnitPlay.this
                         );
                     }
+
+                    // Install the next graph and restore the initial UI state on the EDT.
                     @Override
                     protected void done() {
                         try {
@@ -172,8 +212,8 @@ public class KnitPlay extends JFrame {
                 unPicker = new SwingWorker<Void, Void>() {
                     @Override
                     protected Void doInBackground() throws Exception {
-                            knitGraph.doUnpicking();
-                            knitGraph.resetGraph();
+                        knitGraph.doUnpicking();
+                        knitGraph.resetGraph();
                         return null;
                     }
                 };
@@ -181,6 +221,8 @@ public class KnitPlay extends JFrame {
                 unPicker.execute();
             }
         });
+
+        // Request cancellation of knitting, then start the stitch-dropping worker.
         drop.addActionListener(e -> {
             drop.setEnabled(false);
             knit.setEnabled(false);
@@ -211,20 +253,45 @@ public class KnitPlay extends JFrame {
         BACKGROUND.add(unpick);
         BACKGROUND.add(drop);
     }
+
+    /**
+     * Applies the shared visual styling to a control button.
+     *
+     * Removes the default button background and border so that
+     * the button text appears over the application's background image.
+     *
+     * @param button the button to style
+     */
     private void makeButton(JButton button) {
         button.setForeground(Color.MAGENTA);
         button.setOpaque(false);
         button.setContentAreaFilled(false);
         button.setBorderPainted(false);
     }
-    //method that selects a file to play
+    
+    /**
+     * Randomly selects a knitting pattern from the available lace files.
+     *
+     * Stores the selected file path for loading the pattern and
+     * derives a display name for the application interface.
+     */
     private void setFileInfo() {
         String[] knitFile = new KnitFileSelector("knitSpeak/LaceFiles").getKnitFileSelection();
         Random random = new Random();
-        this.randomInt = random.nextInt(knitFile.length);
-        this.file = knitFile[randomInt];
+        this.file = knitFile[random.nextInt(knitFile.length)];
         this.fileName = file.replace("knitSpeak/", " ").replace(".txt", " ");
     }
+
+    // Thread-safe UI updates used by background graph operations.
+
+    /**
+     * Updates the label displaying the current knitting command.
+     *
+     * Applies the update immediately when called on the Swing event
+     * dispatch thread, or schedules it on that thread otherwise.
+     *
+     * @param text the command or status message to display
+     */
     public void updateKnittingCommands(String text) {
         if (SwingUtilities.isEventDispatchThread()) {
             knittingCommands.setText(text);
@@ -232,6 +299,15 @@ public class KnitPlay extends JFrame {
             SwingUtilities.invokeLater(() -> knittingCommands.setText(text));
         }
     }
+
+    /**
+     * Updates the label displaying knitting progress.
+     *
+     * Ensures the label is updated on the Swing event dispatch
+     * thread, including when called from a background worker.
+     *
+     * @param text the progress or status message to display
+     */
     public void updateStitchesMade(String text) {
         if (SwingUtilities.isEventDispatchThread()) {
             stitchesMade.setText(text);
@@ -239,6 +315,12 @@ public class KnitPlay extends JFrame {
             SwingUtilities.invokeLater(() -> stitchesMade.setText(text));
         }
     }
+
+    /**
+     * Launches the KnitPlay application on the Swing event dispatch thread.
+     *
+     * @param args command-line arguments (unused)
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(KnitPlay::new);
     }
