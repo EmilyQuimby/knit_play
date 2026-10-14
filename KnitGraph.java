@@ -519,7 +519,7 @@ public class KnitGraph {
             Thread.sleep(350);
             e.to.thread = null;
         }
-        KNIT_PLAY.knittingCommands.setText("Program resetting, please wait.");
+        KNIT_PLAY.knittingCommands.setText("Program resetting...");
         KNIT_PLAY.stitchesMade.setText("");
         resetGraph();
     }
