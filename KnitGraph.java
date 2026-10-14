@@ -1,23 +1,39 @@
 import java.util.ArrayList;
 
+/**
+ * Represents a knitting pattern as a graph of stitches and their connections.
+ *
+ * Processes KnitSpeak commands to construct the graph, supports unpicking
+ * and dropping stitches, and associates sounds with knitting operations.
+ */
 public class KnitGraph {
-    private final ArrayList<Stitch> STITCHES;   //stores all stitches
-    private final ArrayList<Edge> EDGES;        //stores all edges
-    private final ArrayList<SoundPlayer> SOUNDS;//stores all instances of SoundPlayer allows us to close clips remotely
+    private final ArrayList<Stitch> STITCHES;
+    private final ArrayList<Edge> EDGES;
+    private final ArrayList<SoundPlayer> SOUNDS; // stores all instances of SoundPlayer allows us to close clips remotely
     private final ArrayList<Stitch> DROPPED_STITCHES;
     private final String[] COMMANDS;
-    private final KnitPlay KNIT_PLAY;           //this is required so that we can update the GUI 
-    private int stitchesInRowBelow;             //keeps track of how many stitches to be worked in current row
-    private int workedStitches;                 //keeps track of how many stitches have been worked per row
-    private int workingStitch;                  //keeps a track of which stitch is being worked
-    private int increases;                      //counts number of increases made in row
-    private int decreases;                      //counts number of decreases made in row
-    private int currentCommandNo;               //keeps track of command as we knit/unpick
-    private int stitchNumber;                   //allocates numbers to stitches
-    private int turningStitchNo;                //tracks turning stitches
+    private final KnitPlay KNIT_PLAY;           // this is required so that we can update the GUI 
+    private int stitchesInRowBelow;
+    private int workedStitches;
+    private int workingStitch;                  // Index of the stitch being worked in the row below.
+    private int increases;
+    private int decreases;
+    private int currentCommandNo;
+    private int stitchNumber;
+    private int turningStitchNo;
     private int edgeLength;
     private boolean castingOff;
     private boolean finishedKnitting;
+
+    /**
+     * Creates an empty knitting graph for the supplied pattern.
+     *
+     * Initialises the collections and state used to construct,
+     * modify and play the graph.
+     *
+     * @param knitFile the KnitSpeak commands defining the pattern
+     * @param knitPlay the application used to display knitting progress
+     */
     public KnitGraph(String[] knitFile, KnitPlay knitPlay) {
         this.KNIT_PLAY = knitPlay;
         this.COMMANDS = knitFile;
@@ -38,33 +54,26 @@ public class KnitGraph {
         edgeLength = 0;
     }
 
-    ////////////////////////////////////KNITTING////////////////////////////////
+    // KNITTING
 
     /**
-     * Iterates over the commands array in order to build a KnitGraph
-     * <p>
-     * doKnitting() is synchronized with other methods doUnpicking() and dropAStitch(). If it is interrupted by either
-     * of these methods, it stops processing. Each command tells the program what to do, and therefore an appropriate
-     * helper method is accessed, and Edge length is set. The variable currentCommandNo is initially set to 0, however
-     * this changes once KnitGraph processing begins. When doKnitting() is resumed it knows where in the list of
-     * commands to start from by accessing this variable. As this process runs, the program keeps track of how many
-     * stitches are in the last row and how many stitches have been increased/decreased. In this respect, the program
-     * knows when a row of stitches has finished being worked, and the KnitGraph is able to maintain a consistent state.
-     * Once all commands have been processed, the KnitGraph is complete and ready to be "played".
-     * <p>
-     * This method can be (manually) evolved as new KnitSpeak files are added. New knit commands can be included,
-     * either by adding to the already existing ones, or creating a new if statement. For example, if a cabling knit
-     * pattern were to be included, the program would need to know how to treat a command such as "C3B" which means to
-     * cable across three stitches by pushing the first three working stitches to the back and working the following
-     * three stitches before working the first three. This would be a straightforward operation.
-     * @throws Exception
+     * Builds the knitting graph by processing KnitSpeak commands in sequence.
+     *
+     * Each command creates or modifies stitches and edges, while the graph
+     * tracks row boundaries, stitch counts, increases and decreases.
+     *
+     * The current command index is retained so knitting can resume after
+     * an interruption. This method is synchronized to prevent concurrent
+     * execution with other synchronized graph operations.
+     *
+     * @throws Exception if command processing or sound playback fails
      */
-   synchronized void doKnitting() throws Exception {
-       KNIT_PLAY.stitchesMade.setText("let the knitting begin");
-       Thread.sleep(250);       //pause to allow GUI update to be read.
+    synchronized void doKnitting() throws Exception {
+        KNIT_PLAY.updateStitchesMade("let the knitting begin");
+        Thread.sleep(250);       // pause to allow GUI update to be read.
         for (int i = currentCommandNo; i < COMMANDS.length; i++) {
             currentCommandNo = i;
-            KNIT_PLAY.knittingCommands.setText(COMMANDS[i]);
+            KNIT_PLAY.updateKnittingCommands(COMMANDS[i]);
             if (COMMANDS[i].contains("co")) {
                 edgeLength = 0;
                 castOn(extractInt(COMMANDS[i]));
@@ -111,7 +120,16 @@ public class KnitGraph {
             }
         }
     }
-    /////////////////////////KNITTING HELPER METHODS/////////////////////////////
+
+    /**
+     * Creates the initial row of stitches and establishes its size.
+     *
+     * Once all stitches have been created, marks the row boundary
+     * and prepares the graph for the next row.
+     *
+     * @param noOfStitches number of stitches to cast on
+     * @throws Exception if stitch creation or row transition fails
+     */
     private void castOn(int noOfStitches) throws Exception {
         stitchesInRowBelow = noOfStitches;      //establish the number of stitches in the first row
         while(noOfStitches > 0){
@@ -121,6 +139,14 @@ public class KnitGraph {
         }
         turn();
     }
+
+    /**
+     * Creates a stitch with an associated sound.
+     *
+     * Records the knitting command and stitch number, connects the
+     * new stitch to the previous stitch with an edge, and adds it
+     * to the graph.
+     */
     private void makeStitch() {
         SoundPlayer soundPlayer = new SoundPlayer("knit", 2);
         Stitch stitch = new Stitch(soundPlayer);
@@ -133,14 +159,30 @@ public class KnitGraph {
         }
         STITCHES.add(stitch);
         SOUNDS.add(stitch.soundPlayer);
-        KNIT_PLAY.stitchesMade.setText("Made stitch no: " + stitchNumber);
+        KNIT_PLAY.updateStitchesMade("Made stitch no: " + stitchNumber);
         stitchNumber++;
     }
+
+    /**
+     * Adds a directed edge between two stitches.
+     *
+     * @param from the originating stitch
+     * @param to the destination stitch
+     * @param length the edge length used to determine playback sounds
+     */
     private void addEdge(Stitch from, Stitch to, int length) {
         Edge edge = new Edge(from, to, length);
         EDGES.add(edge);
     }
-    //tracks where the working stitch is in relation to stitches in the row below
+    
+    /**
+     * Advances the working position through the current row.
+     *
+     * Moves to the next stitch in the row below, or turns the
+     * knitting when all stitches in the row have been worked.
+     *
+     * @throws Exception if the operation is interrupted
+     */
     private void workNextStitch() throws Exception {
         Thread.sleep(400);
         if (workedStitches < stitchesInRowBelow) {
@@ -150,7 +192,16 @@ public class KnitGraph {
             turn();
         }
     }
-    //turn knitting to work the next row. Resets relevant variables and updates turning stitch.
+
+    /**
+     * Marks the end of a row and prepares to work the next one.
+     *
+     * Records the turning stitch, resets the working position
+     * and row counters, and adjusts the next row's stitch count
+     * to account for increases and decreases.
+     *
+     * @throws InterruptedException if the row transition is interrupted
+     */
     private void turn() throws InterruptedException {
         getLastStitch().setTurningStitch(true);
         getLastStitch().setTurningStitchNo(turningStitchNo);
@@ -160,16 +211,33 @@ public class KnitGraph {
         stitchesInRowBelow = stitchesInRowBelow + increases - decreases;
         increases = 0;
         decreases = 0;
-        KNIT_PLAY.stitchesMade.setText("next row!");
+        KNIT_PLAY.updateStitchesMade("next row!");
         Thread.sleep(450); //pause to allow the GUI update to be read.
     }
+
+    /**
+     * Creates a new stitch worked into the current stitch below.
+     *
+     * Records the relationship between the two stitches and
+     * advances the working position.
+     *
+     * @throws Exception if stitch processing fails
+     */
     private void knitOrPurl() throws Exception {
         makeStitch();
         STITCHES.get(workingStitch).stitchAbove.add(getLastStitch());   //works (adds) new stitch into stitch below
         workedStitches++;
         workNextStitch();
     }
-    //creates a new stitch without working it into a stitch below
+
+    /**
+     * Creates a new stitch without working into a stitch below.
+     *
+     * Records an increase and adjusts the working position so
+     * the next operation uses the correct underlying stitch.
+     *
+     * @throws Exception if stitch processing fails
+     */
     private void yarnOver() throws Exception {
         makeStitch();
         increases++;
@@ -177,7 +245,16 @@ public class KnitGraph {
                             // stitch below.
         workNextStitch();
     }
-    //for use with ssk, k2t, p2t etc. may add complexity later to account for the different variations
+    
+    /**
+     * Works multiple existing stitches together into one new stitch.
+     *
+     * Links the new stitch to each stitch being worked and records
+     * the reduction in stitch count for the current row.
+     *
+     * @param noOfStitches number of stitches removed from the row count
+     * @throws Exception if stitch processing fails
+     */
     private void decrease(int noOfStitches) throws Exception {
         decreases = decreases + noOfStitches;
         makeStitch();
@@ -188,6 +265,15 @@ public class KnitGraph {
             workNextStitch();
         }
     }
+
+    /**
+     * Creates two new stitches worked into the same stitch below.
+     *
+     * Records the increase in stitch count and advances the
+     * working position once both stitches have been created.
+     *
+     * @throws Exception if stitch processing fails
+     */
     private void increase() throws Exception {
        //make a stitch and work it into stitch below twice (working the same stitch each time)
         makeStitch();
@@ -198,10 +284,18 @@ public class KnitGraph {
         workedStitches++;
         workNextStitch();
     }
-    //ends the knitting process and creates new "castoff" sounds for each stitch in the row below.
+    
+    /**
+     * Completes the knitting pattern by playing cast-off sounds.
+     *
+     * Generates sounds based on the number of stitches in the
+     * final row and marks the knitting process as finished.
+     *
+     * @throws InterruptedException if sound generation is interrupted
+     */
     private void castOff() throws InterruptedException {
         castingOff = true;
-        KNIT_PLAY.stitchesMade.setText("casting off");
+        KNIT_PLAY.updateStitchesMade("casting off");
         int count = 0;
         while(count<=stitchesInRowBelow) {
             SoundPlayer soundPlayer = new SoundPlayer("castoff", 1);
@@ -213,6 +307,16 @@ public class KnitGraph {
         }
         finishedKnitting = true;
     }
+
+    /**
+     * Extracts the numeric portion of a knitting command.
+     *
+     * Returns 1 when the command contains no digits.
+     *
+     * @param str the command to parse
+     * @return the extracted integer, or 1 if no digits are present
+     * @throws NumberFormatException if the extracted value cannot be parsed
+     */
     private static int extractInt(String str) {
         str = str.replaceAll("[^\\d]", "");
         str = str.trim();
@@ -222,24 +326,21 @@ public class KnitGraph {
         return Integer.parseInt(str);
     }
 
-    ////////////////////////////////////UNPICKING////////////////////////////////
+    // UNPICKING
 
     /**
-     * Pauses knitting to unpick stitches.
-     * <p>
-     * Iterates backwards through all the stitches. For each stitch, a new "unpick" sound is generated. The existing
-     * sound clip for each stitch is closed before removing both the sound and the stitch itself. If there are no
-     * stitches to unpick i.e. they've all been removed, then the KnitGraph is reset.
-     * <p>
-     * If this process is interraupted by doKnitting(), then the helper method goBack() is called. This removes any
-     * remaining stitches from the current row, and sets all the variables to reflect the current state of the
-     * KnitGraph. In particular, the KnitGraph needs to know where to resume knitting from.
-     * @throws Exception
+     * Removes stitches from the graph in reverse order, playing an unpicking
+     * sound and releasing the associated sound clip for each removed stitch.
+     *
+     * If unpicking is interrupted, attempts to restore a consistent state
+     * at the previous row boundary using {@link #goBack()}.
+     *
+     * @throws Exception if unpicking or its recovery operations fail
      */
     synchronized void doUnpicking() throws Exception {
-        KNIT_PLAY.stitchesMade.setText("OK! let's unpick some stitches...");
-        Thread.sleep(550);  //pause to allow GUI update to be seen
+        KNIT_PLAY.updateStitchesMade("OK! let's unpick some stitches...");
         try {
+            Thread.sleep(550);  //pause to allow GUI update to be seen
             //if casting off, do nothing.
             if(castingOff) {
                 return;
@@ -255,7 +356,7 @@ public class KnitGraph {
                 currentCommandNo = getLastStitch().commandNo;
                 STITCHES.get(stitch).soundPlayer.getClip().close();
                 SOUNDS.remove(STITCHES.get(stitch).soundPlayer);
-                KNIT_PLAY.stitchesMade.setText("Unpicking stitch no. " + STITCHES.get(stitch).stitchNumber);
+                KNIT_PLAY.updateStitchesMade("Unpicking stitch no. " + STITCHES.get(stitch).stitchNumber);
                 STITCHES.remove(stitch);
                 if(STITCHES.isEmpty()) {
                     resetGraph();
@@ -270,34 +371,42 @@ public class KnitGraph {
         catch (InterruptedException e) {
             //when unpicking is interrupted by a call of "doKnitting()", remove remaining stitches in the current row,
             //unless the program is at the cast-on row, in which case the KnitGraph is reset.
-            goBack();
+            if (!STITCHES.isEmpty()) {
+                goBack();
+            }
         }
     }
-    //////////////////////////////UNPICKING HELPER METHODS///////////////////////////////
+    
+    /**
+     * Rewinds the graph to a row boundary after unpicking is interrupted.
+     *
+     * Removes stitches until it encounters a turning stitch, then updates
+     * the command index and stitch counters so knitting can resume.
+     *
+     * If the cast-on row is reached, resets the graph instead.
+     *
+     * @throws Exception if restoring the graph state fails
+     */
     private void goBack() throws Exception {
-        //loop to remove any remaining stitches in that row
         for (int s = STITCHES.indexOf(getLastStitch()); s >= 0; s--) {
-            //if we've cast off as far as the cast on row, or all stitches have been cast off, just start again.
             if (STITCHES.get(s).command.contains("co")) {
-                KNIT_PLAY.stitchesMade.setText("Let's start again!");
+                KNIT_PLAY.updateStitchesMade("Let's start again!");
                 resetGraph();
                 return;
             }
-            //if it's not a turning stitch i.e. not the end of the row, keep removing it
             if (!STITCHES.get(s).turningStitch) {
-                KNIT_PLAY.stitchesMade.setText("Unpicking stitch no. " + STITCHES.get(s).stitchNumber);
+                KNIT_PLAY.updateStitchesMade("Unpicking stitch no. " + STITCHES.get(s).stitchNumber);
                 STITCHES.get(s).soundPlayer.getClip().close();
                 SOUNDS.remove(STITCHES.get(s).soundPlayer);
                 STITCHES.remove(STITCHES.get(s));
             
             }
-            //otherwise set variables and turn
             else {
                 currentCommandNo = getLastStitch().commandNo + 1;
                 stitchNumber = getLastStitch().stitchNumber + 1;
                 turningStitchNo = getLastStitch().turningStitchNo;
                 turn();
-                //work out how many stitches below:
+                // Determine the size of the row below using consecutive turning stitches.
                 Stitch previousTurningStitch = null;
                 for (Stitch found : STITCHES) {
                     if (found.turningStitch && found.turningStitchNo == getLastStitch().turningStitchNo - 1) {
@@ -310,61 +419,126 @@ public class KnitGraph {
         }
     }
 
-    //////////////////////////////////////////DROPPING STITCHES///////////////////////////////////////
+    // DROPPING STITCHES
 
     /**
-     * Drops a stitch.
-     * <p>
-     * When a stitch is dropped, stitches which contain the dropped stitch also become dropped, and so on.
-     * This results in a "ladder" in the KnitGraph where all related stitches are removed and replaced with a single
-     * extra-long edge which joins the stitches on either side of the dropped stitch.
-     * <p>
-     * To find the first dropped stitch, the program iterates over all stitches: ignores all stitches which have
-     * stitches contained within them (already worked stitches) until a stitch is found which does not contain another
-     * stitch i.e. it hasn't been worked. The program continues to iterate until it finds a stitch which has been
-     * worked. The first dropped stitch is the one before this stitch. This stitch is added to an array of stitches to
-     * be dropped. The program then iterates through all the stitches again to find one/s that contain the last dropped
-     * stitch, and these are also added to the array. This continues until there are no more stitches which contain the
-     * last dropped stitch. The program then takes all edges related to the dropped stitches, and replaces them with a
-     * new edge which joins the adjacent stitches back together. Finally, the program iterates through the array of
-     * dropped stitches and removes them from the KnitGraph. The dropped stitch array is then cleared, and the resulting
-     * "laddered" KnitGraph can be "played".
-     * @throws InterruptedException
+     * Simulates dropping a stitch and the resulting laddering effect.
+     *
+     * Selects an eligible stitch from the current knitting row and
+     * removes it along with the stitches that depend on it.
+     * The graph's edges are then adjusted to reconnect the
+     * remaining stitches.
+     *
+     * A stitch cannot be dropped once knitting has finished,
+     * during casting off, or at certain row boundaries.
+     *
+     * @throws InterruptedException if sound playback is interrupted
      */
     synchronized void dropAStitch() throws InterruptedException {
-        KNIT_PLAY.knittingCommands.setText("whoops - dropped a stitch!");
-        Stitch droppedStitch = null;
-        Stitch firstEmptyStitch = null;
-        //if we're casting-off or already finished knitting, no stitch will be dropped
+        KNIT_PLAY.updateKnittingCommands("whoops - dropped a stitch!");
+
         if (castingOff || finishedKnitting) {
-            KNIT_PLAY.stitchesMade.setText("No - we'd already finished knitting!");
-        }
-        //otherwise...
-        else if(workedStitches!=stitchesInRowBelow && getLastStitch().commandNo != 1) {
-            //find dropped stitch - its the last stitch in the row below that doesn't contain a stitch above
-            for (Stitch stitch : STITCHES) {
-                if(stitch.stitchAbove.isEmpty() && !COMMANDS[stitch.commandNo].contains("yo")) {
-                    firstEmptyStitch = stitch;
-                    break;
-                }
-            }
-            for (int drop = firstEmptyStitch.stitchNumber; drop < STITCHES.size(); drop++) {
-                if(!STITCHES.get(drop).stitchAbove.isEmpty()) {
-                    break;
-                }
-                else {
-                    droppedStitch = STITCHES.get(drop);
-                }
-            }
-            doDropping(droppedStitch);
-        }
-        //last option is that we just finished a row or are casting-on, so there is no possibility of a stitch being dropped
-        else {
-            KNIT_PLAY.stitchesMade.setText("No stitch has been dropped");
+            KNIT_PLAY.updateStitchesMade("No - we'd already finished knitting!");
             return;
         }
+
+        if (STITCHES.isEmpty()
+                || workedStitches == stitchesInRowBelow
+                || getLastStitch().commandNo == 1) {
+            KNIT_PLAY.updateStitchesMade("No stitch has been dropped");
+            return;
+        }
+
+        Stitch droppedStitch = findStitchToDrop();
+
+        if (!canDropStitch(droppedStitch)) {
+            KNIT_PLAY.updateStitchesMade("No stitch can be dropped yet");
+            return;
+        }
+
+        doDropping(droppedStitch);
     }
-    //method keeps adding dropped stitches to the DROPPED_STITCHES list until there are no more to be added.
+
+    /**
+     * Finds a stitch eligible to begin the dropping operation.
+     *
+     * Locates the first stitch without stitches worked into it,
+     * excluding yarn-over stitches. Then searches forward to find
+     * the last consecutive unworked stitch before encountering
+     * one that has been worked.
+     *
+     * @return the stitch to drop, or null if no candidate is found
+     */
+    private Stitch findStitchToDrop() {
+        Stitch firstEmptyStitch = null;
+        Stitch droppedStitch = null;
+
+        for (Stitch stitch : STITCHES) {
+            if (stitch.stitchAbove.isEmpty()
+                    && !COMMANDS[stitch.commandNo].contains("yo")) {
+                firstEmptyStitch = stitch;
+                break;
+            }
+        }
+
+        if (firstEmptyStitch == null) {
+            return null;
+        }
+
+        for (int drop = firstEmptyStitch.stitchNumber; drop < STITCHES.size(); drop++) {
+            if (!STITCHES.get(drop).stitchAbove.isEmpty()) {
+                break;
+            }
+
+            droppedStitch = STITCHES.get(drop);
+        }
+
+        return droppedStitch;
+    }
+
+    /**
+     * Checks whether a stitch has the connections needed for dropping.
+     *
+     * A stitch must have both an incoming and an outgoing edge
+     * so that the surrounding stitches can be reconnected.
+     *
+     * @param stitch the candidate stitch
+     * @return true if the stitch has both connections; otherwise false
+     */
+    private boolean canDropStitch(Stitch stitch) {
+        if (stitch == null) {
+            return false;
+        }
+
+        boolean hasIncomingEdge = false;
+        boolean hasOutgoingEdge = false;
+
+        for (Edge edge : EDGES) {
+            if (edge.to == stitch) {
+                hasIncomingEdge = true;
+            }
+
+            if (edge.from == stitch) {
+                hasOutgoingEdge = true;
+            }
+
+            if (hasIncomingEdge && hasOutgoingEdge) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Recursively identifies stitches affected by a dropped stitch.
+     *
+     * Finds stitches whose stitchAbove collection contains the
+     * dropped stitch, adds them to DROPPED_STITCHES, and continues
+     * following the dependency chain.
+     *
+     * @param dropped the stitch whose dependent stitches are being found
+     */
     private void addDroppedStitch(Stitch dropped) {
         boolean droppedStitchFound = false;
         Stitch nextDrop = null;
@@ -379,7 +553,20 @@ public class KnitGraph {
             addDroppedStitch(nextDrop);
         }
     }
-    //method adjusts the edges to replace edges of stitches to be dropped, then removes the dropped stitches
+    
+    /**
+     * Removes the affected stitches and reconnects the graph.
+     *
+     * Plays a sound for each dropped stitch, replaces the affected
+     * edges with longer edges connecting the surviving stitches,
+     * and removes the dropped stitches from the graph.
+     *
+     * The new edge lengths represent the gaps created by laddering
+     * and are used during subsequent sound playback.
+     *
+     * @param droppedStitch the initial stitch to drop
+     * @throws InterruptedException if sound playback is interrupted
+     */
     private void doDropping(Stitch droppedStitch) throws InterruptedException {
         DROPPED_STITCHES.add(droppedStitch);
         addDroppedStitch(droppedStitch);
@@ -390,7 +577,7 @@ public class KnitGraph {
             thread.start();
             Thread.sleep(100);
             thread.join();
-            KNIT_PLAY.stitchesMade.setText("Dropped Stitch: " + s.stitchNumber);
+            KNIT_PLAY.updateStitchesMade("Dropped Stitch: " + s.stitchNumber);
             Thread.sleep(450);
         }
         Stitch tempFrom = null;
@@ -412,7 +599,8 @@ public class KnitGraph {
                     edgeLocation = EDGES.indexOf(e);
                 }
             }
-            //sets new edge length depending on how many consecutive stitches have been dropped
+            // Use a length greater than ordinary knitting edges to represent
+            // the gap left by dropped stitches and distinguish it during playback.
             edgeLength = 5 * (tempTo.stitchNumber-tempFrom.stitchNumber-1);
             newEdge = new Edge(tempFrom, tempTo, edgeLength);
             EDGES.add(edgeLocation, newEdge);
@@ -424,20 +612,25 @@ public class KnitGraph {
         }
     }
 
-    ////////////////////////////////////////PLAY THE COMPLETED GRAPH///////////////////////////////////////
+    // PLAYBACK
 
     /**
-     * Iterates over the KnitGraph edges, updates their "to" stitches sounds depending on the length of the edge. The
-     * length of the edge is determined in the knitting process and depends on what command resulted in the stitch.
-     * The first stitch is never a "to" stitch contained within an edge, and it is always going to be length 0 as this
-     * will always be a cast on stitch, so this stitch is updated and played back first, before iterating over the edges
-     * and their "to" stitches. Once all stitches have been "played", the KnitGraph is reset, and the whole process can
-     * start from scratch.
-     * @throws InterruptedException
+     * Plays the completed knitting graph as a sequence of sounds.
+     *
+     * Traverses the graph's edges, using their lengths to determine
+     * the sound associated with each destination stitch.
+     *
+     * The initial cast-on stitch is played separately because it
+     * is not the destination of an edge. Longer edges created by
+     * dropped stitches also trigger dropping sounds.
+     *
+     * Resets the graph after playback has finished.
+     *
+     * @throws InterruptedException if playback is interrupted
      */
     synchronized void playGraph() throws InterruptedException{
-        KNIT_PLAY.knittingCommands.setText("");
-        KNIT_PLAY.stitchesMade.setText("Playing the knit graph");
+        KNIT_PLAY.updateKnittingCommands("");
+        KNIT_PLAY.updateStitchesMade("Playing the knit graph");
         String command = "clapping";
         int loops = 1;
         EDGES.get(0).from.soundPlayer = new SoundPlayer(command, loops);
@@ -446,6 +639,9 @@ public class KnitGraph {
         EDGES.get(0).from.thread.start();
         Thread.sleep(250);
         EDGES.get(0).from.thread = null;
+        // Edge lengths encode knitting operations as sound choices:
+        // 0 = cast on, 1 = decrease, 2 = knit/purl,
+        // 3 = increase, 4 = yarn over, >4 = dropped stitches.
         for (Edge e : EDGES) {
             if (e.length == 0) {
                 command = "clapping";
@@ -463,7 +659,7 @@ public class KnitGraph {
                 command = "response";
                 loops = 2;
             }
-            else if (e.length > 4){     //these will be a result of dropped stitches
+            else if (e.length > 4){     // these will be a result of dropped stitches
                 for (int i = 0; i<e.length; i++) {
                     SoundPlayer droppingSound = new SoundPlayer("drop", 1);
                     SOUNDS.add(droppingSound);
@@ -478,16 +674,33 @@ public class KnitGraph {
             Thread.sleep(350);
             e.to.thread = null;
         }
-        KNIT_PLAY.knittingCommands.setText("Program resetting, please wait.");
-        KNIT_PLAY.stitchesMade.setText("");
+        KNIT_PLAY.updateKnittingCommands("Program resetting...");
+        KNIT_PLAY.updateStitchesMade("");
         resetGraph();
     }
 
-    ////////////////////////////GENERAL HELPER METHODS/////////////////////////////
+    // GENERAL HELPERS
+
+    /**
+     * Returns the most recently added stitch.
+     *
+     * @return the last stitch in the graph
+     * @throws IndexOutOfBoundsException if the graph contains no stitches
+     */
     private Stitch getLastStitch() {
         Stitch last  = STITCHES.get(STITCHES.size()-1);
         return last;
     }
+
+    /**
+     * Restores the graph to its initial state.
+     *
+     * Closes tracked sound clips, removes stitches and edges,
+     * and resets the counters and flags used during knitting.
+     *
+     * The original knitting commands are retained, allowing
+     * the pattern to be processed again from the beginning.
+     */
     void resetGraph() {
         for(SoundPlayer s : SOUNDS) {
             s.getClip().close();
@@ -508,16 +721,26 @@ public class KnitGraph {
         turningStitchNo = 0;
         edgeLength = 0;
     }
+
     ///////////////////////////STITCH CLASS///////////////////////
+    /**
+     * Represents an individual stitch in the knitting graph.
+     *
+     * Tracks the command that created the stitch, its position
+     * in the pattern, and any stitches subsequently worked into it.
+     *
+     * Also stores its associated sound player and information
+     * about whether it marks a row boundary.
+     */
     private static class Stitch {
         protected SoundPlayer soundPlayer;
         protected Thread thread;
-        protected ArrayList<Stitch> stitchAbove;    //stores stitches that have been worked into this stitch
-        protected int commandNo;                    //stores index of command that created stitch
+        protected ArrayList<Stitch> stitchAbove;    // Stitches created by working into this stitch in subsequent rows.
+        protected int commandNo;                    // stores index of command that created stitch
         protected String command;
-        protected int stitchNumber;                 //stores stitch number
-        protected boolean turningStitch;            //is this a turning stitch?
-        protected int turningStitchNo;              //if so, which one?
+        protected int stitchNumber;                 // stores stitch number
+        protected boolean turningStitch;            // is this a turning stitch?
+        protected int turningStitchNo;              // if so, which one?
         public Stitch(SoundPlayer soundPlayer) {
             stitchAbove = new ArrayList<Stitch>();
             this.soundPlayer = soundPlayer;
@@ -546,6 +769,13 @@ public class KnitGraph {
     ////////////////////////////////////////////////////////////
 
     ///////////////////////////EDGE CLASS///////////////////////
+    /**
+     * Represents a connection between two stitches.
+     *
+     * The edge length encodes information about the knitting
+     * operation and determines the sound used during playback.
+     * Longer edges can also represent gaps caused by dropped stitches.
+     */
     private static class Edge {
         protected Stitch from;
         protected Stitch to;
@@ -559,10 +789,21 @@ public class KnitGraph {
     ////////////////////////////////////////////////////////////
     
     
-    ///////For JUnit Tests...///////////////////
+    // TEST HELPERS
+
+    /**
+     * Returns the number of stitches currently in the graph.
+     *
+     * @return the current stitch count
+     */
     int getNumberOfStitches() {
     	return STITCHES.size();
     }
+    /**
+     * Returns the stitch numbers recorded during dropping operations.
+     *
+     * @return an array containing the recorded dropped stitch numbers
+     */
     int[] getDroppedStitches() {
     	int[] stitches = new int[DROPPED_STITCHES.size()];
     	for(int i=0;i<stitches.length;i++) {
@@ -571,14 +812,22 @@ public class KnitGraph {
     	return stitches;
     }
 
-    //this is a copy of the doKnitting method that has been modified to part-build the KnitGraph
-    //so that it can be used for JUnit testing.
+    /**
+     * Builds part of a knitting graph for testing purposes.
+     *
+     * Processes a fraction of the supplied commands, allowing
+     * tests to inspect the graph before the pattern is complete.
+     *
+     * @param testCommands the knitting commands to process
+     * @param fraction divisor used to determine how many commands to process
+     * @throws Exception if command processing fails
+     */
     synchronized void knitPartOfGraph(String[] testCommands, int fraction) throws Exception {
-        KNIT_PLAY.stitchesMade.setText("let the knitting begin");
+        KNIT_PLAY.updateStitchesMade("let the knitting begin");
         Thread.sleep(250);       //pause to allow GUI update to be read.
          for (int i = 0; i < testCommands.length/fraction; i++) {
              currentCommandNo = i;
-             KNIT_PLAY.knittingCommands.setText(testCommands[i]);
+             KNIT_PLAY.updateKnittingCommands(testCommands[i]);
              if (testCommands[i].contains("co")) {
                  edgeLength = 0;
                  castOn(extractInt(testCommands[i]));
