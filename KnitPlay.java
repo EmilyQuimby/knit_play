@@ -240,6 +240,6 @@ public class KnitPlay extends JFrame {
         }
     }
     public static void main(String[] args) {
-        new KnitPlay();
+        SwingUtilities.invokeLater(KnitPlay::new);
     }
 }
