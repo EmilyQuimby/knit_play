@@ -333,36 +333,77 @@ public class KnitGraph {
      */
     synchronized void dropAStitch() throws InterruptedException {
         KNIT_PLAY.knittingCommands.setText("whoops - dropped a stitch!");
-        Stitch droppedStitch = null;
-        Stitch firstEmptyStitch = null;
-        //if we're casting-off or already finished knitting, no stitch will be dropped
+
         if (castingOff || finishedKnitting) {
             KNIT_PLAY.stitchesMade.setText("No - we'd already finished knitting!");
+            return;
         }
-        //otherwise...
-        else if(workedStitches!=stitchesInRowBelow && getLastStitch().commandNo != 1) {
-            //find dropped stitch - its the last stitch in the row below that doesn't contain a stitch above
-            for (Stitch stitch : STITCHES) {
-                if(stitch.stitchAbove.isEmpty() && !COMMANDS[stitch.commandNo].contains("yo")) {
-                    firstEmptyStitch = stitch;
-                    break;
-                }
-            }
-            for (int drop = firstEmptyStitch.stitchNumber; drop < STITCHES.size(); drop++) {
-                if(!STITCHES.get(drop).stitchAbove.isEmpty()) {
-                    break;
-                }
-                else {
-                    droppedStitch = STITCHES.get(drop);
-                }
-            }
-            doDropping(droppedStitch);
-        }
-        //last option is that we just finished a row or are casting-on, so there is no possibility of a stitch being dropped
-        else {
+
+        if (STITCHES.isEmpty()
+                || workedStitches == stitchesInRowBelow
+                || getLastStitch().commandNo == 1) {
             KNIT_PLAY.stitchesMade.setText("No stitch has been dropped");
             return;
         }
+
+        Stitch droppedStitch = findStitchToDrop();
+
+        if (!canDropStitch(droppedStitch)) {
+            KNIT_PLAY.stitchesMade.setText("No stitch can be dropped yet");
+            return;
+        }
+
+        doDropping(droppedStitch);
+    }
+    private Stitch findStitchToDrop() {
+        Stitch firstEmptyStitch = null;
+        Stitch droppedStitch = null;
+
+        for (Stitch stitch : STITCHES) {
+            if (stitch.stitchAbove.isEmpty()
+                    && !COMMANDS[stitch.commandNo].contains("yo")) {
+                firstEmptyStitch = stitch;
+                break;
+            }
+        }
+
+        if (firstEmptyStitch == null) {
+            return null;
+        }
+
+        for (int drop = firstEmptyStitch.stitchNumber; drop < STITCHES.size(); drop++) {
+            if (!STITCHES.get(drop).stitchAbove.isEmpty()) {
+                break;
+            }
+
+            droppedStitch = STITCHES.get(drop);
+        }
+
+        return droppedStitch;
+    }
+    private boolean canDropStitch(Stitch stitch) {
+        if (stitch == null) {
+            return false;
+        }
+
+        boolean hasIncomingEdge = false;
+        boolean hasOutgoingEdge = false;
+
+        for (Edge edge : EDGES) {
+            if (edge.to == stitch) {
+                hasIncomingEdge = true;
+            }
+
+            if (edge.from == stitch) {
+                hasOutgoingEdge = true;
+            }
+
+            if (hasIncomingEdge && hasOutgoingEdge) {
+                return true;
+            }
+        }
+
+        return false;
     }
     //method keeps adding dropped stitches to the DROPPED_STITCHES list until there are no more to be added.
     private void addDroppedStitch(Stitch dropped) {
