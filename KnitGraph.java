@@ -238,8 +238,8 @@ public class KnitGraph {
      */
     synchronized void doUnpicking() throws Exception {
         KNIT_PLAY.updateStitchesMade("OK! let's unpick some stitches...");
-        Thread.sleep(550);  //pause to allow GUI update to be seen
         try {
+            Thread.sleep(550);  //pause to allow GUI update to be seen
             //if casting off, do nothing.
             if(castingOff) {
                 return;
@@ -270,7 +270,9 @@ public class KnitGraph {
         catch (InterruptedException e) {
             //when unpicking is interrupted by a call of "doKnitting()", remove remaining stitches in the current row,
             //unless the program is at the cast-on row, in which case the KnitGraph is reset.
-            goBack();
+            if (!STITCHES.isEmpty()) {
+                goBack();
+            }
         }
     }
     //////////////////////////////UNPICKING HELPER METHODS///////////////////////////////
